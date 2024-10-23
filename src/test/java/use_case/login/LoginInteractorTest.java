@@ -6,14 +6,10 @@ import entity.User;
 import entity.UserFactory;
 import org.junit.Test;
 
-import java.time.LocalDateTime;
-
 import static org.junit.Assert.*;
 
 public class LoginInteractorTest {
 
-    // TODO Task 2.2: make a copy of this test method and follow the instructions in the readme to test your
-    //                code from Task 2.1..
     @Test
     public void successTest() {
         LoginInputData inputData = new LoginInputData("Paul", "password");
@@ -41,6 +37,39 @@ public class LoginInteractorTest {
         interactor.execute(inputData);
     }
 
+    @Test
+    public void successUserLoggedInTest() {
+        LoginInputData inputData = new LoginInputData("Paul", "password");
+        InMemoryUserDataAccessObject userRepository = new InMemoryUserDataAccessObject(); // Note: using InMemoryUserDataAccessObject directly
+
+        // Add Paul to the data access repository before logging in.
+        UserFactory factory = new CommonUserFactory();
+        User user = factory.create("Paul", "password");
+        userRepository.save(user);
+
+        // Assert that no user is logged in initially (currentUser should be null).
+        assertNull(userRepository.getCurrentUser());
+
+        // Create a presenter that checks if the user logs in successfully.
+        LoginOutputBoundary successPresenter = new LoginOutputBoundary() {
+            @Override
+            public void prepareSuccessView(LoginOutputData user) {
+                assertEquals("Paul", user.getUsername());
+            }
+
+            @Override
+            public void prepareFailView(String error) {
+                fail("Use case failure is unexpected.");
+            }
+        };
+
+        // Execute the login use case.
+        LoginInputBoundary interactor = new LoginInteractor(userRepository, successPresenter);
+        interactor.execute(inputData);
+
+        // Assert that the correct user is now logged in (Paul).
+        assertEquals("Paul", userRepository.getCurrentUser());
+    }
 
     @Test
     public void failurePasswordMismatchTest() {
